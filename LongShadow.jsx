@@ -8,24 +8,37 @@ var shape; // subPathItem
 currDoc = app.activeDocument;
     //alert('currDoc.activeLayer: '+currDoc.activeLayer.name+' type:'+currDoc.activeLayer.typename);
    // alert('No of pathItems: #'+currDoc.pathItems.length);
-     var currPathItem = getActivePathItem(currDoc);
+    var currPathItem = getActivePathItem(currDoc);
     if( currPathItem != null)
     {
         //currPathItem.duplicate("TEST");
         shape = currPathItem.subPathItems;        
-        alert('shape: '+shape.length+" x:"+shape[0].pathPoints[0].anchor[0]+" y:"+shape[0].pathPoints[0].anchor[1]);
-        alert('shape: '+shape[0].pathPoints.toString());
+        
+        
         //layerRef.fillOpacity = 70;
         //DrawShape([100, 100], [100, 200], [200, 200], [200, 100]);   
-        var arr= new Array();
-        for ( var i=0;i < shape[0].pathPoints.length;i++)
+        var allShapes= new Array();
+        for ( var shapeCount = 0;shapeCount < shape.length; shapeCount++)
         {
-            var tmp = new Array();
-            tmp[0] = parseFloat(shape[0].pathPoints[i].anchor[0]);
-            tmp[1] = parseFloat(shape[0].pathPoints[i].anchor[1]);
-            arr[i] = tmp;
+            var currShape = new Array();
+            for ( var pointCount=0;pointCount < shape[shapeCount].pathPoints.length;pointCount++)
+            {
+                var tmp = new Array();
+                // anchor [0] & [1]
+                tmp[0] = parseFloat(shape[shapeCount].pathPoints[pointCount].anchor[0]);
+                tmp[1] = parseFloat(shape[shapeCount].pathPoints[pointCount].anchor[1]);
+                // leftDirection [2] & [3]
+                tmp[2] = parseFloat(shape[shapeCount].pathPoints[pointCount].leftDirection[0]);
+                tmp[3] = parseFloat(shape[shapeCount].pathPoints[pointCount].leftDirection[1]);
+                // rightDirection [4] & [5]
+                tmp[4] = parseFloat(shape[shapeCount].pathPoints[pointCount].rightDirection[0]);
+                tmp[5] = parseFloat(shape[shapeCount].pathPoints[pointCount].rightDirection[1]);
+                
+                currShape[pointCount] = tmp;
+            }
+            allShapes[shapeCount] = currShape;
         }
-        DrawShape(arr);
+        DrawShape(allShapes);
    
     }
 }
@@ -75,52 +88,38 @@ function openTestFile()
 function DrawShape() {
     
     var doc = app.activeDocument;
-    var arr = arguments;
-    var shapeOne = arr[0];
-    var y = shapeOne.length;
-    var i = 0;
+    var allShapes = arguments[0];
+    var dir = new Array(1,1);
+    var currShape = null;
+    var totalCount = 0;
     
-  /* var lineArray = [];
-    for (i = 0; i < y; i++) {
-        lineArray[i] = new PathPointInfo;
-        lineArray[i].kind = PointKind.CORNERPOINT;
-        lineArray[i].anchor = arguments[i];
-        lineArray[i].leftDirection = lineArray[i].anchor;
-        lineArray[i].rightDirection = lineArray[i].anchor;
-    }
- 
     var lineSubPathArray = new Array();
-    lineSubPathArray[0] = new SubPathInfo();
-    lineSubPathArray[0].closed = true;
-    lineSubPathArray[0].operation = ShapeOperation.SHAPEADD;
-    lineSubPathArray[0].entireSubPath = lineArray;
-*/
-    var lineSubPathArray = new Array();
-    for (var count = 0; count < 50; count++) 
+    for (var shapeCount = 0; shapeCount < allShapes.length;shapeCount++) 
     {
-        var lineArray = [];
-        for (i = 0; i < y; i++) {
-            lineArray[i] = new PathPointInfo;
-            lineArray[i].kind = PointKind.CORNERPOINT;
-            var posx = shapeOne[i][0];
-            var posy = shapeOne[i][1];
-            //alert("posx: "+posx+" posy: "+posy);
-            
-            
-            posx +=count;
-            posy +=count;
-            lineArray[i].anchor = Array(posx,posy);
-            lineArray[i].leftDirection = lineArray[i].anchor;
-            lineArray[i].rightDirection = lineArray[i].anchor;
+        currShape  = allShapes[shapeCount];
+        for (var count = 0; count < 50; count++) 
+        {
+            var lineArray = [];
+            for (var pathPointCount = 0; pathPointCount < currShape.length; pathPointCount++) {
+                lineArray[pathPointCount] = new PathPointInfo;
+                lineArray[pathPointCount].kind = PointKind.CORNERPOINT;
+                var tmpXoffset = count*dir[0];
+                var tmpYoffset = count*dir[1];
+                lineArray[pathPointCount].anchor = Array(currShape[pathPointCount][0]+tmpXoffset,
+                                                                              currShape[pathPointCount][1]+tmpYoffset);
+                lineArray[pathPointCount].leftDirection = Array(currShape[pathPointCount][2]+tmpXoffset,
+                                                                                     currShape[pathPointCount][3]+tmpYoffset);
+                lineArray[pathPointCount].rightDirection = Array(currShape[pathPointCount][4]+tmpXoffset,
+                                                                                       currShape[pathPointCount][5]+tmpYoffset);
+            }
+            lineSubPathArray[totalCount] = new SubPathInfo();
+            lineSubPathArray[totalCount].closed = true;
+            lineSubPathArray[totalCount].operation = ShapeOperation.SHAPEADD;
+            lineSubPathArray[totalCount].entireSubPath = lineArray;
+            totalCount++;
         }
-        lineSubPathArray[count] = new SubPathInfo();
-        lineSubPathArray[count].closed = true;
-        lineSubPathArray[count].operation = ShapeOperation.SHAPEADD;
-        lineSubPathArray[count].entireSubPath = lineArray;
-    }
+    }    
     var myPathItem = doc.pathItems.add("myPath", lineSubPathArray);
-    
- 
     var desc88 = new ActionDescriptor();
     var ref60 = new ActionReference();
 
@@ -156,5 +155,5 @@ function DrawShape() {
     desc10.putObject( idT, idLyr, desc11 );
     executeAction( idsetd, desc10, DialogModes.NO );
     
-    myPathItem.remove();
+   myPathItem.remove();
 }
