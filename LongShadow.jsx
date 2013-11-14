@@ -1,24 +1,86 @@
-﻿var currDoc = app.activeDocument;
+﻿main();
 
-currDoc.close (SaveOptions.DONOTSAVECHANGES);
-currDoc  = app.documents.add(800, 500, 72, "myDocument", NewDocumentMode.RGB)
-
-    alert('No of pathItems: #'+app.activeDocument.pathItems.length);
-DrawShape([100, 100], [100, 200], [200, 200], [200, 100]);
-
-var layerRef = app.activeDocument.artLayers.getByName("LongShadow");
-if( layerRef != null)
+function main()
 {
-    layerRef.fillOpacity = 70;
+var currDoc;
+var shape; // subPathItem
+//alwaysStartFresh();
+currDoc = app.activeDocument;
+    //alert('currDoc.activeLayer: '+currDoc.activeLayer.name+' type:'+currDoc.activeLayer.typename);
+   // alert('No of pathItems: #'+currDoc.pathItems.length);
+     var currPathItem = getActivePathItem(currDoc);
+    if( currPathItem != null)
+    {
+        //currPathItem.duplicate("TEST");
+        shape = currPathItem.subPathItems;        
+        alert('shape: '+shape.length+" x:"+shape[0].pathPoints[0].anchor[0]+" y:"+shape[0].pathPoints[0].anchor[1]);
+        alert('shape: '+shape[0].pathPoints.toString());
+        //layerRef.fillOpacity = 70;
+        //DrawShape([100, 100], [100, 200], [200, 200], [200, 100]);   
+        var arr= new Array();
+        for ( var i=0;i < shape[0].pathPoints.length;i++)
+        {
+            var tmp = new Array();
+            tmp[0] = parseFloat(shape[0].pathPoints[i].anchor[0]);
+            tmp[1] = parseFloat(shape[0].pathPoints[i].anchor[1]);
+            arr[i] = tmp;
+        }
+        DrawShape(arr);
+   
+    }
 }
 
+function getActivePathItem(doc)
+{
+    if( doc == undefined)
+        return null;
+    var tmp = null;
+    try
+    {
+        tmp = doc.pathItems.getByName(doc.activeLayer.name+" Vector Mask");
+    }
+    catch( err) 
+    {
+        tmp = null;
+    }
+    return tmp;
+}
+function alwaysStartFresh()
+{
+
+    try
+    {
+        currDoc = app.activeDocument;
+        currDoc.close (SaveOptions.DONOTSAVECHANGES);
+        currDoc = null;
+    }
+    catch(err)
+    {
+        currDoc = null;
+     
+    }
+    if ( currDoc == null)
+        openTestFile();
+}
+function getShape(){
+    for (var i = 0; i < currDoc.pathItems.length; i++) 
+    {
+        
+    }
+ }
+function openTestFile()
+{
+     currDoc = open(File("D:/Eigene Dateien/Code/JavaScript/LongShadow/test_scene.psd"));
+}
 function DrawShape() {
     
     var doc = app.activeDocument;
-    var y = arguments.length;
+    var arr = arguments;
+    var shapeOne = arr[0];
+    var y = shapeOne.length;
     var i = 0;
     
-    var lineArray = [];
+  /* var lineArray = [];
     for (i = 0; i < y; i++) {
         lineArray[i] = new PathPointInfo;
         lineArray[i].kind = PointKind.CORNERPOINT;
@@ -32,16 +94,19 @@ function DrawShape() {
     lineSubPathArray[0].closed = true;
     lineSubPathArray[0].operation = ShapeOperation.SHAPEADD;
     lineSubPathArray[0].entireSubPath = lineArray;
-
-    
-    for (var count = 1; count < 50; count++) 
+*/
+    var lineSubPathArray = new Array();
+    for (var count = 0; count < 50; count++) 
     {
         var lineArray = [];
         for (i = 0; i < y; i++) {
             lineArray[i] = new PathPointInfo;
             lineArray[i].kind = PointKind.CORNERPOINT;
-            var posx = arguments[i][0];
-            var posy = arguments[i][1];
+            var posx = shapeOne[i][0];
+            var posy = shapeOne[i][1];
+            //alert("posx: "+posx+" posy: "+posy);
+            
+            
             posx +=count;
             posy +=count;
             lineArray[i].anchor = Array(posx,posy);
