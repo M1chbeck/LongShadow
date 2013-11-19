@@ -1,66 +1,51 @@
-﻿main();
+﻿var ErrorEnum = {
+  NoDocument: {value: 0, name: "NoDocument", explanation: "Could not retrieve the active Document."}, 
+  NoLayer: {value: 1, name: "NoLayer", explanation: ""}, 
+  NoShape: {value: 2, name: "NoShape", explanation: "No active layer, or no not containing a shape called: <LayerName> Vector Mask"}
+};
+
+main();
 
 function main()
-{
-var currDoc;
-var shape; // subPathItem
-//alwaysStartFresh();
-currDoc = app.activeDocument;
-    //alert('currDoc.activeLayer: '+currDoc.activeLayer.name+' type:'+currDoc.activeLayer.typename);
-   // alert('No of pathItems: #'+currDoc.pathItems.length);
-    var currPathItem = getActivePathItem(currDoc);
-    if( currPathItem != null)
+{    
+    var currDoc, currPathItem, shape;
+    
+    try{ currDoc = app.activeDocument; } // if no Document open
+    catch (e) { alert( ErrorEnum.NoDocument.explanation ); return;} // show error and end
+    
+    try { currPathItem = currDoc.pathItems.getByName(currDoc.activeLayer.name+" Vector Mask"); } // try to retrieve the Path of an active Shape
+    catch (e) { alert( ErrorEnum.NoShape.explanation ); return;} // show error and end
+    
+    shape = currPathItem.subPathItems;        
+    var allShapes= new Array();
+    for ( var shapeCount = 0;shapeCount < shape.length; shapeCount++)
     {
-        //currPathItem.duplicate("TEST");
-        shape = currPathItem.subPathItems;        
-        
-        
-        //layerRef.fillOpacity = 70;
-        //DrawShape([100, 100], [100, 200], [200, 200], [200, 100]);   
-        var allShapes= new Array();
-        for ( var shapeCount = 0;shapeCount < shape.length; shapeCount++)
+        var currShape = new Array();
+        for ( var pointCount=0;pointCount < shape[shapeCount].pathPoints.length;pointCount++)
         {
-            var currShape = new Array();
-            for ( var pointCount=0;pointCount < shape[shapeCount].pathPoints.length;pointCount++)
-            {
-                var tmp = new Array();
-                // anchor [0] & [1]
-                tmp[0] = parseFloat(shape[shapeCount].pathPoints[pointCount].anchor[0]);
-                tmp[1] = parseFloat(shape[shapeCount].pathPoints[pointCount].anchor[1]);
-                // leftDirection [2] & [3]
-                tmp[2] = parseFloat(shape[shapeCount].pathPoints[pointCount].leftDirection[0]);
-                tmp[3] = parseFloat(shape[shapeCount].pathPoints[pointCount].leftDirection[1]);
-                // rightDirection [4] & [5]
-                tmp[4] = parseFloat(shape[shapeCount].pathPoints[pointCount].rightDirection[0]);
-                tmp[5] = parseFloat(shape[shapeCount].pathPoints[pointCount].rightDirection[1]);
-                
-                currShape[pointCount] = tmp;
-            }
-            allShapes[shapeCount] = currShape;
+            var tmp = new Array();
+            // anchor [0] & [1]
+            tmp[0] = parseFloat(shape[shapeCount].pathPoints[pointCount].anchor[0]);
+            tmp[1] = parseFloat(shape[shapeCount].pathPoints[pointCount].anchor[1]);
+            // leftDirection [2] & [3]
+            tmp[2] = parseFloat(shape[shapeCount].pathPoints[pointCount].leftDirection[0]);
+            tmp[3] = parseFloat(shape[shapeCount].pathPoints[pointCount].leftDirection[1]);
+            // rightDirection [4] & [5]
+            tmp[4] = parseFloat(shape[shapeCount].pathPoints[pointCount].rightDirection[0]);
+            tmp[5] = parseFloat(shape[shapeCount].pathPoints[pointCount].rightDirection[1]);
+            
+            currShape[pointCount] = tmp;
         }
-        DrawShape(allShapes);
-   
+        allShapes[shapeCount] = currShape;
     }
+    CreateShadowsFrom(allShapes);
 }
 
-function getActivePathItem(doc)
+function retrieveAllShapes()
 {
-    if( doc == undefined)
-        return null;
-    var tmp = null;
-    try
-    {
-        tmp = doc.pathItems.getByName(doc.activeLayer.name+" Vector Mask");
-    }
-    catch( err) 
-    {
-        tmp = null;
-    }
-    return tmp;
 }
 function alwaysStartFresh()
 {
-
     try
     {
         currDoc = app.activeDocument;
@@ -75,17 +60,11 @@ function alwaysStartFresh()
     if ( currDoc == null)
         openTestFile();
 }
-function getShape(){
-    for (var i = 0; i < currDoc.pathItems.length; i++) 
-    {
-        
-    }
- }
 function openTestFile()
 {
      currDoc = open(File("D:/Eigene Dateien/Code/JavaScript/LongShadow/test_scene.psd"));
 }
-function DrawShape() {
+function CreateShadowsFrom() {
     
     var doc = app.activeDocument;
     var allShapes = arguments[0];
