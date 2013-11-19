@@ -1,21 +1,31 @@
 ﻿var ErrorEnum = {
   NoDocument: {value: 0, name: "NoDocument", explanation: "Could not retrieve the active Document."}, 
   NoSubPathItems: {value: 1, name: "NoSubPathItems", explanation: "The shape does not contain any subpaths."}, 
-  NoShape: {value: 2, name: "NoShape", explanation: "No active layer, or no not containing a shape called: <LayerName> Vector Mask"},
-  LongTimeWarning: {value: 3, name: "LongTimeWarning", explanation: "This process could take a very long time."}
+  NoShape: {value: 2, name: "NoShape", explanation: "No active layer, or not containing a shape called: <LayerName> Vector Mask"},
+  NoActiveLayer: {value: 3, name: "NoActiveLayer", explanation: "No active layer found."},
+  LongTimeWarning: {value: 4, name: "LongTimeWarning", explanation: "This process could take a very long time."}
 };
-
+#target photoshop
+app.bringToFront(); // bring top
+var startDisplayDialogs = app.displayDialogs; // safe the old setting for displaying Dialogs
+app.displayDialogs = DialogModes.ALL; // showing Dialogs
 main();
+displayDialogs = startDisplayDialogs; // return to the old setting for displaying Dialogs
 
 function main()
-{    
-    var currDoc, currPathItem, allShapes;
+{
+    var currDoc, currPathItem, allShapes, currLayer;
     try{ currDoc = app.activeDocument; } // if no Document open
     catch (e) { alert( ErrorEnum.NoDocument.explanation ); return;} // show error and end
+    
+    try { currLayer = currDoc.activeLayer; } // is there an active Layer?
+    catch (e) { alert( ErrorEnum.NoActiveLayer.explanation ); return;} // show error and end
     
     try { currPathItem = currDoc.pathItems.getByName(currDoc.activeLayer.name+" Vector Mask"); } // try to retrieve the Path of an active Shape
     catch (e) { alert( ErrorEnum.NoShape.explanation ); return;} // show error and end
     
+    //prepareUI();
+
     if ( currPathItem.subPathItems.length < 1) // if there are no subpathitems, then show an error and end
     {
         alert( ErrorEnum.NoSubPathItems.explanation ); 
@@ -29,10 +39,60 @@ function main()
             return;
     }
 
-    allShapes= retrieveAllShapes(currPathItem.subPathItems);  // try to retrieve all the subPathItems of the active layer
-    CreateShadowsFrom(currDoc, allShapes,250 );
+    // try to retrieve all the subPathItems of the active layer
+    allShapes= retrieveAllShapes(currPathItem.subPathItems);  
+    CreateShadowsFrom(currDoc, allShapes,50 );
+    // move the shadow behind the shape
+    currDoc.activeLayer.move(currLayer, ElementPlacement.PLACEAFTER);/**/
 }
+function prepareUI2()
+{
+    var sOpenButton = localize("$$$/File/Open=Open");
+    var sCacelButton = localize("$$$/AdobePlugin/Shared/Cancel=Cancel");
 
+    var folderSamples = new Folder(app.path.toString());
+    var files = folderSamples.getFiles("*.*");
+
+    var ui = // dialog resource object
+    "dialog { \
+        alignChildren: 'fill', \
+        pFiles: Panel { \
+            orientation: 'column', alignChildren:'left', \
+            text: 'Sample files', \
+            g: Group { \
+                orientation: 'column', alignChildren:'left', \
+            }, \
+        }, \
+        gButtons: Group { \
+            orientation: 'row', alignment: 'right', \
+            okBtn: Button { text:'Ok', properties:{name:'ok'} }, \
+            cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } \
+        } \
+    }";
+
+    var win = new Window (ui); // new window object with UI resource
+    
+    // match our dialog background color to the host application
+    win.graphics.backgroundColor = win.graphics.newBrush (win.graphics.BrushType.THEME_COLOR, "appDialogBackground");
+
+    // over write with localized string
+    win.pFiles.text = folderSamples;
+    win.gButtons.okBtn.text = sOpenButton;
+    win.gButtons.cancelBtn.text = sCacelButton;
+    
+    win.center();	// move to center before
+	var ret = win.show();  // dialog display
+}
+function prepareUI()
+{
+    var dlg = new Window('dialog', 'Long Shadow Creator', [100,100,480,245]);
+    dlg.directionPanel = dlg.add('panel', [45,50,335,95], 'Direction');
+    dlg.directionPanel.alignLeftRb = dlg.directionPanel.add('radiobutton', [15,15,95,35], 'Left');
+    dlg.directionPanel.alignCenterRb = dlg.directionPanel.add('radiobutton', [15,15,185,55], 'Center');
+    dlg.directionPanel.alignRightRb = dlg.directionPanel.add('radiobutton', [15,15,275,35], 'Right');
+    dlg.directionPanel.alignCenterRb.value = true;
+    dlg.show();
+ }
 function retrieveAllShapes(subPathItems)
 {
     var allShapes= new Array();
@@ -61,6 +121,7 @@ function retrieveAllShapes(subPathItems)
 
 function CreateShadowsFrom(inCurrDoc,inAllShapes,inShadowLength)
 {    
+    app.displayDialogs = DialogModes.NO; // showing Dialogs
     var allShapes = inAllShapes;
     var dir = new Array(1,1);
     var currShape = null;
@@ -130,4 +191,5 @@ function CreateShadowsFrom(inCurrDoc,inAllShapes,inShadowLength)
     executeAction( idsetd, desc10, DialogModes.NO );
     
    myPathItem.remove();
+   app.displayDialogs = DialogModes.ALL; // showing Dialogs
 }
