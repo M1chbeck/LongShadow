@@ -1,82 +1,77 @@
 ﻿var ErrorEnum = {
   NoDocument: {value: 0, name: "NoDocument", explanation: "Could not retrieve the active Document."}, 
-  NoLayer: {value: 1, name: "NoLayer", explanation: ""}, 
-  NoShape: {value: 2, name: "NoShape", explanation: "No active layer, or no not containing a shape called: <LayerName> Vector Mask"}
+  NoSubPathItems: {value: 1, name: "NoSubPathItems", explanation: "The shape does not contain any subpaths."}, 
+  NoShape: {value: 2, name: "NoShape", explanation: "No active layer, or no not containing a shape called: <LayerName> Vector Mask"},
+  LongTimeWarning: {value: 3, name: "LongTimeWarning", explanation: "This process could take a very long time."}
 };
 
 main();
 
 function main()
 {    
-    var currDoc, currPathItem, shape;
-    
+    var currDoc, currPathItem, allShapes;
     try{ currDoc = app.activeDocument; } // if no Document open
     catch (e) { alert( ErrorEnum.NoDocument.explanation ); return;} // show error and end
     
     try { currPathItem = currDoc.pathItems.getByName(currDoc.activeLayer.name+" Vector Mask"); } // try to retrieve the Path of an active Shape
     catch (e) { alert( ErrorEnum.NoShape.explanation ); return;} // show error and end
     
-    shape = currPathItem.subPathItems;        
+    if ( currPathItem.subPathItems.length < 1) // if there are no subpathitems, then show an error and end
+    {
+        alert( ErrorEnum.NoSubPathItems.explanation ); 
+        return;
+    } 
+
+    if ( currPathItem.subPathItems.length >= 10)  // ask the user if he wants to continue even if it takes a long time
+    {
+        var r=confirm("There are over "+currPathItem.subPathItems.length+" subpathitems. \n\r"+ErrorEnum.LongTimeWarning.explanation );
+        if (r!=true)
+            return;
+    }
+
+    allShapes= retrieveAllShapes(currPathItem.subPathItems);  // try to retrieve all the subPathItems of the active layer
+    CreateShadowsFrom(currDoc, allShapes,250 );
+}
+
+function retrieveAllShapes(subPathItems)
+{
     var allShapes= new Array();
-    for ( var shapeCount = 0;shapeCount < shape.length; shapeCount++)
+    for ( var shapeCount = 0;shapeCount < subPathItems.length; shapeCount++)
     {
         var currShape = new Array();
-        for ( var pointCount=0;pointCount < shape[shapeCount].pathPoints.length;pointCount++)
+        for ( var pointCount=0;pointCount < subPathItems[shapeCount].pathPoints.length;pointCount++)
         {
             var tmp = new Array();
             // anchor [0] & [1]
-            tmp[0] = parseFloat(shape[shapeCount].pathPoints[pointCount].anchor[0]);
-            tmp[1] = parseFloat(shape[shapeCount].pathPoints[pointCount].anchor[1]);
+            tmp[0] = parseFloat(subPathItems[shapeCount].pathPoints[pointCount].anchor[0]);
+            tmp[1] = parseFloat(subPathItems[shapeCount].pathPoints[pointCount].anchor[1]);
             // leftDirection [2] & [3]
-            tmp[2] = parseFloat(shape[shapeCount].pathPoints[pointCount].leftDirection[0]);
-            tmp[3] = parseFloat(shape[shapeCount].pathPoints[pointCount].leftDirection[1]);
+            tmp[2] = parseFloat(subPathItems[shapeCount].pathPoints[pointCount].leftDirection[0]);
+            tmp[3] = parseFloat(subPathItems[shapeCount].pathPoints[pointCount].leftDirection[1]);
             // rightDirection [4] & [5]
-            tmp[4] = parseFloat(shape[shapeCount].pathPoints[pointCount].rightDirection[0]);
-            tmp[5] = parseFloat(shape[shapeCount].pathPoints[pointCount].rightDirection[1]);
+            tmp[4] = parseFloat(subPathItems[shapeCount].pathPoints[pointCount].rightDirection[0]);
+            tmp[5] = parseFloat(subPathItems[shapeCount].pathPoints[pointCount].rightDirection[1]);
             
             currShape[pointCount] = tmp;
         }
         allShapes[shapeCount] = currShape;
     }
-    CreateShadowsFrom(allShapes);
+    return allShapes;
 }
 
-function retrieveAllShapes()
-{
-}
-function alwaysStartFresh()
-{
-    try
-    {
-        currDoc = app.activeDocument;
-        currDoc.close (SaveOptions.DONOTSAVECHANGES);
-        currDoc = null;
-    }
-    catch(err)
-    {
-        currDoc = null;
-     
-    }
-    if ( currDoc == null)
-        openTestFile();
-}
-function openTestFile()
-{
-     currDoc = open(File("D:/Eigene Dateien/Code/JavaScript/LongShadow/test_scene.psd"));
-}
-function CreateShadowsFrom() {
-    
-    var doc = app.activeDocument;
-    var allShapes = arguments[0];
+function CreateShadowsFrom(inCurrDoc,inAllShapes,inShadowLength)
+{    
+    var allShapes = inAllShapes;
     var dir = new Array(1,1);
     var currShape = null;
     var totalCount = 0;
+    inShadowLength = typeof inShadowLength !== 'undefined' ? inShadowLength : 50; // default value for shadow length
     
     var lineSubPathArray = new Array();
     for (var shapeCount = 0; shapeCount < allShapes.length;shapeCount++) 
     {
         currShape  = allShapes[shapeCount];
-        for (var count = 0; count < 50; count++) 
+        for (var count = 0; count < inShadowLength; count++) 
         {
             var lineArray = [];
             for (var pathPointCount = 0; pathPointCount < currShape.length; pathPointCount++) {
@@ -98,7 +93,7 @@ function CreateShadowsFrom() {
             totalCount++;
         }
     }    
-    var myPathItem = doc.pathItems.add("myPath", lineSubPathArray);
+    var myPathItem = inCurrDoc.pathItems.add("myPath", lineSubPathArray);
     var desc88 = new ActionDescriptor();
     var ref60 = new ActionReference();
 
