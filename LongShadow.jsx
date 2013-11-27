@@ -89,14 +89,13 @@ function main()
             CreateFlatShadows(currDoc, allShapes,g_len,g_dir ); // create LoD dependent shadows
         else
             CreatePerfectFlatShadows(currDoc, allShapes,g_len,g_dir ); // create perfect shadows
-        // move the shadow behind the shape
-        currDoc.activeLayer.move(currLayer, ElementPlacement.PLACEAFTER);/**/
+        // move the shadow behind the shape          
+        currDoc.activeLayer.move(currLayer, ElementPlacement.PLACEAFTER);
     }
     else // gradient shadows
     {
-        CreateGradientShadows(currDoc, allShapes,g_len,g_dir ); 
-    }
-    
+        CreateGradientShadows(currDoc, allShapes,g_len,g_dir,currLayer );         
+    }    
 }
 
 function prepareUI()
@@ -470,6 +469,7 @@ function CreateFlatShadows(inCurrDoc,inAllShapes,inShadowLength,inShadowDirectio
     var desc88 = new ActionDescriptor();
     var ref60 = new ActionReference();
 
+    //create Shape Layer from Paths
     ref60.putClass(stringIDToTypeID("contentLayer"));
     desc88.putReference(charIDToTypeID("null"), ref60);
     var desc89 = new ActionDescriptor();
@@ -483,7 +483,7 @@ function CreateFlatShadows(inCurrDoc,inAllShapes,inShadowLength,inShadowDirectio
     desc89.putObject(charIDToTypeID("Type"), stringIDToTypeID("solidColorLayer"), desc90);
     desc88.putObject(charIDToTypeID("Usng"), stringIDToTypeID("contentLayer"), desc89);
     executeAction(charIDToTypeID("Mk  "), desc88, DialogModes.NO);
-    
+   
     // set the Name of the Layer to "LongShadow"
     var idsetd = charIDToTypeID( "setd" );
     var desc10 = new ActionDescriptor();
@@ -501,11 +501,18 @@ function CreateFlatShadows(inCurrDoc,inAllShapes,inShadowLength,inShadowDirectio
     var idLyr = charIDToTypeID( "Lyr " );
     desc10.putObject( idT, idLyr, desc11 );
     executeAction( idsetd, desc10, DialogModes.NO );
-    
+
    myPathItem.remove();
    app.displayDialogs = DialogModes.ALL; // showing Dialogs
 }
-function CreateGradientShadows(inCurrDoc,inAllShapes,inShadowLength,inShadowDirection)
+function CreateGradientShadows(inCurrDoc,inAllShapes,inShadowLength,inShadowDirection,inOrigLayer)
 {
-    
+    CreateFlatShadows(inCurrDoc, inAllShapes,inShadowLength,inShadowDirection ); 
+    app.displayDialogs = DialogModes.NO; // hide Dialogs
+    var longShadowLayer=inCurrDoc.artLayers.getByName("LongShadow");        
+    var layerSetRef = inCurrDoc.layerSets.add()
+    layerSetRef.name = "GradientShadow";
+    longShadowLayer.move(layerSetRef, ElementPlacement.INSIDE);
+    layerSetRef.move(inOrigLayer, ElementPlacement.PLACEAFTER);
+    app.displayDialogs = DialogModes.ALL; // show Dialogs
 }
