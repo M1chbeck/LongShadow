@@ -83,12 +83,20 @@ function main()
     // try to retrieve all the subPathItems of the active layer
     allShapes= retrieveAllShapes(currPathItem.subPathItems);
     
-    if( g_lod != 0)
-        CreateFlatShadows(currDoc, allShapes,g_len,g_dir ); // create LoD dependent shadows
-    else
-        CreatePerfectFlatShadows(currDoc, allShapes,g_len,g_dir ); // create perfect shadows
-    // move the shadow behind the shape
-    currDoc.activeLayer.move(currLayer, ElementPlacement.PLACEAFTER);/**/
+    if(g_style == 0) // flat shadows
+    {
+        if( g_lod != 0)
+            CreateFlatShadows(currDoc, allShapes,g_len,g_dir ); // create LoD dependent shadows
+        else
+            CreatePerfectFlatShadows(currDoc, allShapes,g_len,g_dir ); // create perfect shadows
+        // move the shadow behind the shape
+        currDoc.activeLayer.move(currLayer, ElementPlacement.PLACEAFTER);/**/
+    }
+    else // gradient shadows
+    {
+        CreateGradientShadows(currDoc, allShapes,g_len,g_dir ); 
+    }
+    
 }
 
 function prepareUI()
@@ -135,14 +143,14 @@ function prepareUI()
             lod_5: RadioButton { text: '8'}, \
             }\
         \
-        stlyePanel: Panel { \
-            orientation: 'row', \
-            alignChildren: ['fill','center'], \
-            margins:10, \
-            text: ' Shadow Style ', \
-            style_flat: RadioButton { text: 'Flat', value: 'true'}, \
-            style_grad: RadioButton { text: 'Gradient'}, \
-            }\
+        stylePanel: Panel { \
+                orientation: 'row', \
+                alignChildren: ['fill','center'], \
+                margins:10, \
+                text: ' Shadow Style ', \
+                style_flat: RadioButton { text: 'Flat', value: 'true'}, \
+                style_grad: RadioButton { text: 'Gradient'}, \
+                }\
         \
         bottomGroup: Group{ \
             alignChildren: ['fill','center'], \
@@ -154,13 +162,16 @@ function prepareUI()
     win = new Window(windowResource);
     
     win.lod_indepenent.onClick= function () {
-        win.lodPanel.enabled = !win.lod_indepenent.value;        
+        win.lodPanel.enabled = !win.lod_indepenent.value;
+        // disable stylePanel when LoD-independent
+        win.stylePanel.style_grad.enabled =!win.lod_indepenent.value;        
     } 
     if( g_isCurved)
     {
         win.lod_indepenent.enabled = false;
-        win.remove(win.lod_indepenent );
+        win.remove(win.lod_indepenent );    
     }  
+    
     // slider for direction
      win.dirPanel.dir_sl.onChanging = function () {
        win.dirPanel.dir_sl.value= parseInt( win.dirPanel.dir_sl.value);
@@ -181,7 +192,26 @@ function prepareUI()
        win.lenPanel.len_sl.value= parseInt( win.lenPanel.te.text );
        //win.lenPanel.te.text = parseInt( win.lenPanel.te.text );
     }
-    
+    // radio buttons for style
+    var rbPanel = win.stylePanel;
+    if( !g_isCurved)
+    {
+        rbPanel.addEventListener('click', function(event) {
+            for (var i = 0; i < rbPanel.children.length; i++) {
+                if (rbPanel.children[i].value == true) 
+                {
+                    if (rbPanel.children[i].text == "Flat")
+                    {    
+                        win.lod_indepenent.enabled = true;     
+                    }
+                    else
+                    {                    
+                        win.lod_indepenent.enabled = false;
+                    }
+                 }
+             }
+        });
+    }
     win.bottomGroup.cancelButton.onClick = function() {
       g_cancelScript = true;
         // alert( win.lenPanel.len_sl.value ); // how to get values
@@ -209,7 +239,7 @@ function prepareUI()
             g_lod = 8.0;    
       }
       g_dir = parseInt( win.dirPanel.dir_sl.value ) ;
-      g_style = win.stlyePanel.style_flat.value? 0: 1; // flat or gradient ?      
+      g_style = win.stylePanel.style_flat.value? 0: 1; // flat or gradient ?      
       return win.close();
     };
      
@@ -474,4 +504,8 @@ function CreateFlatShadows(inCurrDoc,inAllShapes,inShadowLength,inShadowDirectio
     
    myPathItem.remove();
    app.displayDialogs = DialogModes.ALL; // showing Dialogs
+}
+function CreateGradientShadows(inCurrDoc,inAllShapes,inShadowLength,inShadowDirection)
+{
+    
 }
