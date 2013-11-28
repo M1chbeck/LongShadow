@@ -1,0 +1,54 @@
+<macromedia-extension
+	name="Long Shadow Creator"
+	version="1.0.0"
+	type="Command">
+
+	<!-- Describe the author -->
+	
+	<author name="Michael Traenkner" />
+
+	<!-- List the required/compatible products -->
+
+	<products>
+	    <product familyname="Photoshop" maxversion="" primary="true" version="12.0"/>
+	    <product familyname="Photoshop" maxversion="" primary="true" version="13.0"/>
+	  </products>
+	<!-- Describe the extension -->
+	
+	<description>
+	<![CDATA[
+	[Where]
+	&nbsp;Access this Script under File-->Scripts-->Long Shadow Creator
+	<br>[What?]
+	&nbsp; This Script will create a long shadow for the currently active shape in the document.It will provide a UI to customize parameters such as lenght, direction, style(flat or gradient) and can even create various Level-of-Detail versions. For non-curved-shapes there is the option to create LoD-independent long shadows. All the shadows created by this script will be shapes.
+	<br>[Who]
+	&nbsp;Created in 2013 by Michael Traenkner for a MSC course at ITU Copenhagen.
+	]]>
+	</description>
+
+	<!-- Describe where the extension shows in the UI of the product -->
+
+	<ui-access>
+	<![CDATA[
+		<br>		
+	]]>
+	</ui-access>
+
+	<!-- Describe the files that comprise the extension -->
+	
+	<files>
+		<file name="Long Shadow Creator.jsx" destination="$scripts" />
+	</files>
+
+	<!-- Describe the changes to the configuration -->
+	
+	<configuration-changes>
+		
+		<!-- Add an entry to the commands menu 
+
+		<menu-insert appendTo="PSMenu_Help" skipSeparator="true">
+			<menuitem name="Long_Test_Shadow" file="Commands/Sample.htm" id="Sample_HelloWorld" />
+			<separator id="Sample_HelloWorld_Separator" />
+		</menu-insert>-->
+	</configuration-changes>
+</macromedia-extension>
