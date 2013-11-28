@@ -97,8 +97,7 @@ function main()
     {
          app.displayDialogs = DialogModes.NO; // show Dialogs
          var shadowGroup= currDoc.layerSets.add()
-         shadowGroup.name = "GradientShadow";          
-      
+         shadowGroup.name = "GradientShadow_"+g_len.toString()+"px_"+g_dir.toString()+"°_"+g_fadePercent+"%";   
         CreateGradientShadows(currDoc, allShapes,g_len,g_dir,currLayer,shadowGroup); 
         shadowGroup.move(currLayer, ElementPlacement.PLACEAFTER); 
         app.displayDialogs = DialogModes.ALL; // show Dialogs
@@ -524,7 +523,7 @@ function CreateFlatShadows(inCurrDoc,inAllShapes,inShadowLength,inShadowDirectio
     var idT = charIDToTypeID( "T   " );
         var desc11 = new ActionDescriptor();
         var idNm = charIDToTypeID( "Nm  " );
-        desc11.putString( idNm, "LongShadow" );
+        desc11.putString( idNm, "LongShadow_"+g_len.toString()+"px_"+g_dir.toString()+"°_LoD"+g_lod);
     var idLyr = charIDToTypeID( "Lyr " );
     desc10.putObject( idT, idLyr, desc11 );
     executeAction( idsetd, desc10, DialogModes.NO );
