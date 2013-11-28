@@ -37,6 +37,7 @@ app.displayDialogs = DialogModes.ALL; // showing Dialogs
 var g_cancelScript = false;
 var g_len=50;
 var g_dir=45;
+var g_fadePercent=100;
 var g_lod=1;
 var g_style=0; // 0 = flat, 1 = gradient;
 var g_isCurved = false;
@@ -94,7 +95,13 @@ function main()
     }
     else // gradient shadows
     {
-        CreateGradientShadows(currDoc, allShapes,g_len,g_dir,currLayer );         
+         app.displayDialogs = DialogModes.NO; // show Dialogs
+         var shadowGroup= currDoc.layerSets.add()
+         shadowGroup.name = "GradientShadow";          
+      
+        CreateGradientShadows(currDoc, allShapes,g_len,g_dir,currLayer,shadowGroup); 
+        shadowGroup.move(currLayer, ElementPlacement.PLACEAFTER); 
+        app.displayDialogs = DialogModes.ALL; // show Dialogs
     }    
 }
 
@@ -124,7 +131,7 @@ function prepareUI()
             alignChildren: 'right', \
             margins:10, \
             text: ' Shadow Length: ', \
-            len_sl: Slider { minvalue: 1, maxvalue: 300, value: 30, size:[220,20] }, \
+            len_sl: Slider { minvalue: 1, maxvalue: 300, value: 50, size:[220,20] }, \
             te: EditText { text: '50', characters: 4, justify: 'left'} \
             } \
         \
@@ -151,6 +158,15 @@ function prepareUI()
                 style_grad: RadioButton { text: 'Gradient'}, \
                 }\
         \
+        fadePanel: Panel { \
+            orientation: 'row', \
+            alignChildren: 'right', \
+            margins:10, \
+            text: ' Gradient Fade Strength: ', \
+            fade_sl: Slider { minvalue: 0, maxvalue: 100, value: 100, size:[220,20] }, \
+            te: EditText { text: '100', characters: 4, justify: 'left'} \
+            } \
+        \
         bottomGroup: Group{ \
             alignChildren: ['fill','center'], \
             cancelButton: Button { text: 'Cancel', properties:{name:'cancel'}, size: [120,24], alignment:['fill', 'center'] }, \
@@ -160,6 +176,7 @@ function prepareUI()
      
     win = new Window(windowResource);
     
+    win.fadePanel.enabled = false;
     win.lod_indepenent.onClick= function () {
         win.lodPanel.enabled = !win.lod_indepenent.value;
         // disable stylePanel when LoD-independent
@@ -191,30 +208,40 @@ function prepareUI()
        win.lenPanel.len_sl.value= parseInt( win.lenPanel.te.text );
        //win.lenPanel.te.text = parseInt( win.lenPanel.te.text );
     }
+    // slider for fade
+     win.fadePanel.fade_sl.onChanging = function () {
+       win.fadePanel.fade_sl.value= parseInt( win.fadePanel.fade_sl.value);
+       win.fadePanel.te.text = parseInt( win.fadePanel.fade_sl.value);
+    }
+    // textfield for fade
+    win.fadePanel.te.onChanging = function () {
+       win.fadePanel.fade_sl.value= parseInt( win.fadePanel.te.text );
+       //win.lenPanel.te.text = parseInt( win.lenPanel.te.text );
+    }
     // radio buttons for style
     var rbPanel = win.stylePanel;
-    if( !g_isCurved)
-    {
-        rbPanel.addEventListener('click', function(event) {
-            for (var i = 0; i < rbPanel.children.length; i++) {
-                if (rbPanel.children[i].value == true) 
-                {
-                    if (rbPanel.children[i].text == "Flat")
-                    {    
+    rbPanel.addEventListener('click', function(event) {
+        for (var i = 0; i < rbPanel.children.length; i++) {
+            if (rbPanel.children[i].value == true) 
+            {
+                if (rbPanel.children[i].text == "Flat")
+                {   
+                    if( !g_isCurved)
                         win.lod_indepenent.enabled = true;     
-                    }
-                    else
-                    {                    
+                     win.fadePanel.enabled = false;
+                }
+                else
+                {                    
+                    if( !g_isCurved)
                         win.lod_indepenent.enabled = false;
-                    }
-                 }
+                    win.fadePanel.enabled = true;
+                }
              }
-        });
-    }
+         }
+    });
     win.bottomGroup.cancelButton.onClick = function() {
-      g_cancelScript = true;
-        // alert( win.lenPanel.len_sl.value ); // how to get values
-      return win.close();
+       g_cancelScript = true;
+       return win.close();
     };
     win.bottomGroup.applyButton.onClick = function() {
       g_len = parseInt( win.lenPanel.len_sl.value ) ;           
@@ -238,6 +265,7 @@ function prepareUI()
             g_lod = 8.0;    
       }
       g_dir = parseInt( win.dirPanel.dir_sl.value ) ;
+      g_fadePercent = parseInt( win.fadePanel.fade_sl.value ) ;
       g_style = win.stylePanel.style_flat.value? 0: 1; // flat or gradient ?      
       return win.close();
     };
@@ -355,7 +383,6 @@ function CreatePerfectFlatShadows(inCurrDoc,inAllShapes,inShadowLength,inShadowD
                 nextPointX = currShape[pathPointCount+1][0];
                 nextPointY = currShape[pathPointCount+1][1];            
             }
-            //alert( "next point "+nextPointX+" "+nextPointY);
             //p1
                 lineArray[0] = new PathPointInfo;
                 lineArray[0].kind = PointKind.CORNERPOINT;
@@ -442,7 +469,7 @@ function CreateFlatShadows(inCurrDoc,inAllShapes,inShadowLength,inShadowDirectio
     var lineSubPathArray = new Array();
     for (var shapeCount = 0; shapeCount < allShapes.length;shapeCount++) 
     {
-        currShape  = allShapes[shapeCount];
+        currShape  = allShapes[shapeCount];        
         for (var count = 0; count < (inShadowLength*g_lod); count++) 
         {
             var lineArray = [];
@@ -505,14 +532,94 @@ function CreateFlatShadows(inCurrDoc,inAllShapes,inShadowLength,inShadowDirectio
    myPathItem.remove();
    app.displayDialogs = DialogModes.ALL; // showing Dialogs
 }
-function CreateGradientShadows(inCurrDoc,inAllShapes,inShadowLength,inShadowDirection,inOrigLayer)
+function CreateGradientShadows(inCurrDoc,inAllShapes,inShadowLength,inShadowDirection,inOrigLayer,inGroup)
 {
-    CreateFlatShadows(inCurrDoc, inAllShapes,inShadowLength,inShadowDirection ); 
-    app.displayDialogs = DialogModes.NO; // hide Dialogs
-    var longShadowLayer=inCurrDoc.artLayers.getByName("LongShadow");        
-    var layerSetRef = inCurrDoc.layerSets.add()
-    layerSetRef.name = "GradientShadow";
-    longShadowLayer.move(layerSetRef, ElementPlacement.INSIDE);
-    layerSetRef.move(inOrigLayer, ElementPlacement.PLACEAFTER);
+     app.displayDialogs = DialogModes.NO; // showing Dialogs
+    var allShapes = inAllShapes;
+    inShadowLength = typeof inShadowLength !== 'undefined' ? inShadowLength : 50; // default value for shadow length
+    inShadowDirection = typeof inShadowDirection !== 'undefined' ? inShadowDirection : 45; // default value for direction
+    
+    var dir = computeDirection(inShadowDirection);
+    var currShape = null;
+    var totalCount = 0;
+    var randomPathName="myPath"+Math.random().toString();
+     var lineSubPathArray = new Array();
+     var shapeCount = 0;  
+     var prevLayer = null;
+     
+     for (var count = 0; count <(inShadowLength*g_lod); count++) 
+     {
+             for (var shapeCount = 0; shapeCount < allShapes.length;shapeCount++) 
+            {
+                currShape  = allShapes[shapeCount];
+                {
+                    var lineArray = [];
+                    for (var pathPointCount = 0; pathPointCount < currShape.length; pathPointCount++) {
+                        lineArray[pathPointCount] = new PathPointInfo;
+                        lineArray[pathPointCount].kind = PointKind.CORNERPOINT;
+                        var tmpXoffset = (count+1)*dir[0];
+                        var tmpYoffset = (count+1)*dir[1];
+                        lineArray[pathPointCount].anchor = Array(currShape[pathPointCount][0]+tmpXoffset,
+                                                                                      currShape[pathPointCount][1]+tmpYoffset);
+                        lineArray[pathPointCount].leftDirection = Array(currShape[pathPointCount][2]+tmpXoffset,
+                                                                                             currShape[pathPointCount][3]+tmpYoffset);
+                        lineArray[pathPointCount].rightDirection = Array(currShape[pathPointCount][4]+tmpXoffset,
+                                                                                               currShape[pathPointCount][5]+tmpYoffset);
+                    }
+                    lineSubPathArray[totalCount] = new SubPathInfo();
+                    lineSubPathArray[totalCount].closed = true;
+                    lineSubPathArray[totalCount].operation = ShapeOperation.SHAPEADD;
+                    lineSubPathArray[totalCount].entireSubPath = lineArray;
+                    totalCount++;
+                }
+            }    
+            var myPathItem = inCurrDoc.pathItems.add(randomPathName, lineSubPathArray);
+            var desc88 = new ActionDescriptor();
+            var ref60 = new ActionReference();
+            var greyVal = 0.0 + (g_fadePercent/100.0)*(255.0*(count /(inShadowLength*g_lod)));
+            
+            //create Shape Layer from Paths
+            ref60.putClass(stringIDToTypeID("contentLayer"));
+            desc88.putReference(charIDToTypeID("null"), ref60);
+            var desc89 = new ActionDescriptor();
+            var desc90 = new ActionDescriptor();
+            var desc91 = new ActionDescriptor();
+            desc91.putDouble(charIDToTypeID("Rd  "), greyVal); // R
+            desc91.putDouble(charIDToTypeID("Grn "), greyVal); // G
+            desc91.putDouble(charIDToTypeID("Bl  "), greyVal); // B
+            var id481 = charIDToTypeID("RGBC");
+            desc90.putObject(charIDToTypeID("Clr "), id481, desc91);
+            desc89.putObject(charIDToTypeID("Type"), stringIDToTypeID("solidColorLayer"), desc90);
+            desc88.putObject(charIDToTypeID("Usng"), stringIDToTypeID("contentLayer"), desc89);
+            executeAction(charIDToTypeID("Mk  "), desc88, DialogModes.NO);
+           
+           var name = "LongShadow"+count.toString();
+            // set the Name of the Layer to "LongShadow"
+            var idsetd = charIDToTypeID( "setd" );
+            var desc10 = new ActionDescriptor();
+            var idnull = charIDToTypeID( "null" );
+                var ref4 = new ActionReference();
+                var idLyr = charIDToTypeID( "Lyr " );
+                var idOrdn = charIDToTypeID( "Ordn" );
+                var idTrgt = charIDToTypeID( "Trgt" );
+                ref4.putEnumerated( idLyr, idOrdn, idTrgt );
+            desc10.putReference( idnull, ref4 );
+            var idT = charIDToTypeID( "T   " );
+                var desc11 = new ActionDescriptor();
+                var idNm = charIDToTypeID( "Nm  " );
+                desc11.putString( idNm, name);
+            var idLyr = charIDToTypeID( "Lyr " );
+            desc10.putObject( idT, idLyr, desc11 );
+            executeAction( idsetd, desc10, DialogModes.NO );
+            
+            //move behind previous layer
+            if( prevLayer != null)
+            {
+                inCurrDoc.activeLayer.move(prevLayer, ElementPlacement.PLACEAFTER);
+             }
+            prevLayer = inCurrDoc.activeLayer;
+            myPathItem.remove();
+    } 
+   //inCurrDoc.artLayers.getByName("LongShadow").move(inGroup, ElementPlacement.INSIDE); // apparently you create the new Layer inside the folder
     app.displayDialogs = DialogModes.ALL; // show Dialogs
 }
