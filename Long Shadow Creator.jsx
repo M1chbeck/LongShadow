@@ -357,8 +357,8 @@ function CreatePerfectFlatShadows(inCurrDoc,inAllShapes,inShadowLength,inShadowD
     inShadowDirection = typeof inShadowDirection !== 'undefined' ? inShadowDirection : 45; // default value for direction
     g_lod = 1.0;    
     var dir = computeDirection(inShadowDirection);
-    dir[0] = dir[0]*inShadowLength;
-    dir[1] = dir[1]*inShadowLength;
+    dir[0] = dir[0]*inShadowLength*g_resolutionFactor;
+    dir[1] = dir[1]*inShadowLength*g_resolutionFactor;
     var currShape = null;
     var totalCount = 0;
     
