@@ -41,6 +41,7 @@ var g_fadePercent=100;
 var g_lod=1;
 var g_style=0; // 0 = flat, 1 = gradient;
 var g_isCurved = false;
+var g_resolutionFactor = 1.0;
 main();
 displayDialogs = startDisplayDialogs; // return to the old setting for displaying Dialogs
 
@@ -49,7 +50,8 @@ function main()
     var currDoc, currPathItem, allShapes, currLayer;
     try{ currDoc = app.activeDocument; } // if no Document open
     catch (e) { alert( ErrorEnum.NoDocument.explanation ); return;} // show error and end
-    
+    g_resolutionFactor = 72.0 / currDoc.resolution; // factor to make it resolution independent since everything is considered to be 72px/inch
+
     try { currLayer = currDoc.activeLayer; } // is there an active Layer?
     catch (e) { alert( ErrorEnum.NoActiveLayer.explanation ); return;} // show error and end
     
@@ -367,20 +369,20 @@ function CreatePerfectFlatShadows(inCurrDoc,inAllShapes,inShadowLength,inShadowD
         for (var pathPointCount = 0; pathPointCount < currShape.length; pathPointCount++) 
         {
             var lineArray = [];
-            var thisPointX = currShape[pathPointCount][0];
-            var thisPointY = currShape[pathPointCount][1];
+            var thisPointX = currShape[pathPointCount][0]*g_resolutionFactor;
+            var thisPointY = currShape[pathPointCount][1]*g_resolutionFactor;
             var nextPointX = 0; //currShape[pathPointCount+1][0];
             var nextPointY = 0;//currShape[pathPointCount+1][1];
            
             if(  pathPointCount == currShape.length-1)
             {
-                nextPointX = currShape[0][0];
-                nextPointY = currShape[0][1];
+                nextPointX = currShape[0][0]*g_resolutionFactor;
+                nextPointY = currShape[0][1]*g_resolutionFactor;
              }
             else
             {
-                nextPointX = currShape[pathPointCount+1][0];
-                nextPointY = currShape[pathPointCount+1][1];            
+                nextPointX = currShape[pathPointCount+1][0]*g_resolutionFactor;
+                nextPointY = currShape[pathPointCount+1][1]*g_resolutionFactor;            
             }
             //p1
                 lineArray[0] = new PathPointInfo;
@@ -475,14 +477,14 @@ function CreateFlatShadows(inCurrDoc,inAllShapes,inShadowLength,inShadowDirectio
             for (var pathPointCount = 0; pathPointCount < currShape.length; pathPointCount++) {
                 lineArray[pathPointCount] = new PathPointInfo;
                 lineArray[pathPointCount].kind = PointKind.CORNERPOINT;
-                var tmpXoffset = count*dir[0];
-                var tmpYoffset = count*dir[1];
-                lineArray[pathPointCount].anchor = Array(currShape[pathPointCount][0]+tmpXoffset,
-                                                                              currShape[pathPointCount][1]+tmpYoffset);
-                lineArray[pathPointCount].leftDirection = Array(currShape[pathPointCount][2]+tmpXoffset,
-                                                                                     currShape[pathPointCount][3]+tmpYoffset);
-                lineArray[pathPointCount].rightDirection = Array(currShape[pathPointCount][4]+tmpXoffset,
-                                                                                       currShape[pathPointCount][5]+tmpYoffset);
+                var tmpXoffset = count*dir[0]*g_resolutionFactor;
+                var tmpYoffset = count*dir[1]*g_resolutionFactor;
+                lineArray[pathPointCount].anchor = Array(currShape[pathPointCount][0]*g_resolutionFactor+tmpXoffset,
+                                                                              currShape[pathPointCount][1]*g_resolutionFactor+tmpYoffset);
+                lineArray[pathPointCount].leftDirection = Array(currShape[pathPointCount][2]*g_resolutionFactor+tmpXoffset,
+                                                                                     currShape[pathPointCount][3]*g_resolutionFactor+tmpYoffset);
+                lineArray[pathPointCount].rightDirection = Array(currShape[pathPointCount][4]*g_resolutionFactor+tmpXoffset,
+                                                                                       currShape[pathPointCount][5]*g_resolutionFactor+tmpYoffset);
             }
             lineSubPathArray[totalCount] = new SubPathInfo();
             lineSubPathArray[totalCount].closed = true;
@@ -556,14 +558,14 @@ function CreateGradientShadows(inCurrDoc,inAllShapes,inShadowLength,inShadowDire
                     for (var pathPointCount = 0; pathPointCount < currShape.length; pathPointCount++) {
                         lineArray[pathPointCount] = new PathPointInfo;
                         lineArray[pathPointCount].kind = PointKind.CORNERPOINT;
-                        var tmpXoffset = (count+1)*dir[0];
-                        var tmpYoffset = (count+1)*dir[1];
-                        lineArray[pathPointCount].anchor = Array(currShape[pathPointCount][0]+tmpXoffset,
-                                                                                      currShape[pathPointCount][1]+tmpYoffset);
-                        lineArray[pathPointCount].leftDirection = Array(currShape[pathPointCount][2]+tmpXoffset,
-                                                                                             currShape[pathPointCount][3]+tmpYoffset);
-                        lineArray[pathPointCount].rightDirection = Array(currShape[pathPointCount][4]+tmpXoffset,
-                                                                                               currShape[pathPointCount][5]+tmpYoffset);
+                        var tmpXoffset = (count+1)*dir[0]*g_resolutionFactor;
+                        var tmpYoffset = (count+1)*dir[1]*g_resolutionFactor;
+                        lineArray[pathPointCount].anchor = Array(currShape[pathPointCount][0]*g_resolutionFactor+tmpXoffset,
+                                                                                      currShape[pathPointCount][1]*g_resolutionFactor+tmpYoffset);
+                        lineArray[pathPointCount].leftDirection = Array(currShape[pathPointCount][2]*g_resolutionFactor+tmpXoffset,
+                                                                                             currShape[pathPointCount][3]*g_resolutionFactor+tmpYoffset);
+                        lineArray[pathPointCount].rightDirection = Array(currShape[pathPointCount][4]*g_resolutionFactor+tmpXoffset,
+                                                                                               currShape[pathPointCount][5]*g_resolutionFactor+tmpYoffset);
                     }
                     lineSubPathArray[totalCount] = new SubPathInfo();
                     lineSubPathArray[totalCount].closed = true;
