@@ -1,7 +1,7 @@
 ﻿var ErrorEnum = {
   NoDocument: {value: 0, name: "NoDocument", explanation: "Could not retrieve the active Document."}, 
   NoSubPathItems: {value: 1, name: "NoSubPathItems", explanation: "The shape does not contain any subpaths."}, 
-  NoShape: {value: 2, name: "NoShape", explanation: "No active layer, or not containing a shape called: <LayerName> Vector Mask"},
+  NoShape: {value: 2, name: "NoShape", explanation: "No active layer, or not containing a shape called: <LayerName> Vector Mask (CS5) or Shape Path(CS6)"},
   NoActiveLayer: {value: 3, name: "NoActiveLayer", explanation: "No active layer found."},
   LongTimeWarning: {value: 4, name: "LongTimeWarning", explanation: "This process could take a very long time."}
 };
@@ -42,6 +42,8 @@ var g_lod=1;
 var g_style=0; // 0 = flat, 1 = gradient;
 var g_isCurved = false;
 var g_resolutionFactor = 1.0;
+var g_startTime = 0.0;
+var g_endTime = 0.0;
 main();
 displayDialogs = startDisplayDialogs; // return to the old setting for displaying Dialogs
 
@@ -104,6 +106,9 @@ function main()
         shadowGroup.move(currLayer, ElementPlacement.PLACEAFTER); 
         app.displayDialogs = DialogModes.ALL; // show Dialogs
     }    
+
+    g_endTime =  new Date().getTime();
+    //alert( (g_endTime-g_startTime).toString());
 }
 
 function prepareUI()
@@ -132,7 +137,7 @@ function prepareUI()
             alignChildren: 'right', \
             margins:10, \
             text: ' Shadow Length: ', \
-            len_sl: Slider { minvalue: 1, maxvalue: 300, value: 50, size:[220,20] }, \
+            len_sl: Slider { minvalue: 1, maxvalue:1000, value: 50, size:[220,20] }, \
             te: EditText { text: '50', characters: 4, justify: 'left'} \
             } \
         \
@@ -268,6 +273,8 @@ function prepareUI()
       g_dir = parseInt( win.dirPanel.dir_sl.value ) ;
       g_fadePercent = parseInt( win.fadePanel.fade_sl.value ) ;
       g_style = win.stylePanel.style_flat.value? 0: 1; // flat or gradient ?      
+
+      g_startTime =  new Date().getTime();
       return win.close();
     };
      

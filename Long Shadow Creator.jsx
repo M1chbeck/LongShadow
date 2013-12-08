@@ -132,7 +132,7 @@ function prepareUI()
             alignChildren: 'right', \
             margins:10, \
             text: ' Shadow Length: ', \
-            len_sl: Slider { minvalue: 1, maxvalue: 300, value: 50, size:[220,20] }, \
+            len_sl: Slider { minvalue: 1, maxvalue: 1000, value: 50, size:[220,20] }, \
             te: EditText { text: '50', characters: 4, justify: 'left'} \
             } \
         \

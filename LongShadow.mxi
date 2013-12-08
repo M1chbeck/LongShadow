@@ -44,11 +44,6 @@
 	
 	<configuration-changes>
 		
-		<!-- Add an entry to the commands menu 
-
-		<menu-insert appendTo="PSMenu_Help" skipSeparator="true">
-			<menuitem name="Long_Test_Shadow" file="Commands/Sample.htm" id="Sample_HelloWorld" />
-			<separator id="Sample_HelloWorld_Separator" />
-		</menu-insert>-->
+		<!-- Add an entry to the commands menu -->
 	</configuration-changes>
 </macromedia-extension>
